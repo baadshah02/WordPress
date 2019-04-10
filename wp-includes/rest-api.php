@@ -276,6 +276,9 @@ function create_initial_rest_routes() {
 	$controller = new WP_REST_Themes_Controller;
 	$controller->register_routes();
 
+	// SRMD_REST_FB_Events_Controller
+	$controller = new SRMD_REST_FB_Events_Controller;
+	$controller->register_routes();
 }
 
 /**
