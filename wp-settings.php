@@ -258,6 +258,7 @@ require( ABSPATH . WPINC . '/rest-api/fields/class-wp-rest-term-meta-fields.php'
 require( ABSPATH . WPINC . '/rest-api/fields/class-wp-rest-user-meta-fields.php' );
 require( ABSPATH . WPINC . '/rest-api/search/class-wp-rest-search-handler.php' );
 require( ABSPATH . WPINC . '/rest-api/search/class-wp-rest-post-search-handler.php' );
+require( ABSPATH . WPINC . '/rest-api/srmd/class-srmd-rest-fb-events-controller.php' );
 require( ABSPATH . WPINC . '/class-wp-block-type.php' );
 require( ABSPATH . WPINC . '/class-wp-block-type-registry.php' );
 require( ABSPATH . WPINC . '/class-wp-block-parser.php' );
