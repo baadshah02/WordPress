@@ -15,6 +15,8 @@
  */
 class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 
+	const EVENT_HASHTAG_KEY = '#event';
+
   /**
 	 * Constructor.
 	 *
@@ -78,7 +80,8 @@ class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 
 	public function validate_fb_request($request) {
 		// TODO validate this query params
-		$verify_token = '648092485622867|4g4xouNOe8JY_50oblKRTEcXND0'; // set in webhook subscription settings
+		// NOTE: "Verify Token" set in webhook subscription settings
+		$verify_token = '648092485622867|4g4xouNOe8JY_50oblKRTEcXND0';
 		$token = $request->get_param('hub_verify_token');
 		if ($request->get_param('hub_verify_token') == null || $token != $verify_token) {
 			error_log('There is an issue with verify token, handle this case correctly: ' . $request->get_param('hub_verify_token'));
@@ -92,12 +95,39 @@ class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 		}
 	}
 
+	/**
+	* Save FB event to DB as a post
+	*
+	*/
 	private function save_event($json_params) {
 		if ($json_params['entry'][0]['changes'][0]['field'] === 'feed') {
-			$event = $json_params['entry'][0]['changes'][0]['value'];
-			error_log('event value: ' . json_encode($event));
+			$response_json = $json_params['entry'][0]['changes'][0]['value'];
+
+			if ($this->is_new_event($response_json)) {
+				 // new event created
+				 // TODO save event here
+			} else if ($this->is_status_post_event($response_json)) {
+				 // TODO save event from the status post
+
+			}
+
+			error_log('event value: ' . json_encode($response_json));
 		}
+		error_log('event value: ' . json_encode($response_json));
+
 	}
+
+	private function is_new_event($json) {
+		 return $json['post']['status_type'] === 'created_event';
+	}
+
+	/**
+	* Return true if the status contains hashtag that indicates new event creation
+	*/
+	private function is_status_post_event($json) {
+		  return preg_match('/{$self::EVENT_HASHTAG_KEY}/', $json['message']);
+	}
+
 	/**
 	 * Validate if the received webhook is from a valid facebook source, otherwise
 	 * @return true if the sha-signature is valid, false otherwise
@@ -106,6 +136,7 @@ class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 		$header_signature = $request->get_header('X-Hub-Signature');
 		// TODO change this secret to a valid secret (or make this configurable)
 		$appsecret = '50e7390422b754a7d327b445e3644605';
+		// $appsecret = 'c3a284c6eede693a7479e3482c7c1965';
 		$raw_post_data = file_get_contents('php://input');
 
 		// Signature matching
@@ -128,7 +159,7 @@ class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 	private function get_context_params_for_create() {
 		$query_params = parent::get_collection_params();
 		$query_params['field'] = array(
-			'description' => __( 'Hub challenge from facebook.' ),
+			'description' => __( 'field with the values received from FB.' ),
 			'type'        => 'string',
 		);
 		return $query_params;
