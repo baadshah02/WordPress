@@ -103,22 +103,72 @@ class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 		if ($json_params['entry'][0]['changes'][0]['field'] === 'feed') {
 			$response_json = $json_params['entry'][0]['changes'][0]['value'];
 
-			if ($this->is_new_event($response_json)) {
-				 // new event created
-				 // TODO save event here
-			} else if ($this->is_status_post_event($response_json)) {
-				 // TODO save event from the status post
 
+			// TODO FIX ME
+			if (!$this->is_status_post_event($response_json)) {
+				 // TODO save event from the status post
+				 $post_title = 'Programmatically Created Post';
+				 $post_content = $response_json['message'];
+				 $post_data = compact('post_title', 'post_content');
+				 $post_data = wp_slash( $post_data );
+				 $post_ID = wp_insert_post( $post_data );
+
+				 if ( is_wp_error( $post_ID ) ) {
+				 	error_log("\n" . $post_ID->get_error_message());
+				 }
+				 $src = $this->upload_image_test($post_ID);
+
+				 update_field('post_title', $post_title, $post_ID);
+				 update_field('post_message', $post_content, $post_ID);
+				 update_field('post_images', '66376624_2584919758214575_66587373365886976_o-3.jpg', $post_ID);
+
+				 error_log('src image: ' . $src);
 			}
 
 			error_log('event value: ' . json_encode($response_json));
 		}
-		error_log('event value: ' . json_encode($response_json));
-
 	}
 
-	private function is_new_event($json) {
-		 return $json['post']['status_type'] === 'created_event';
+	private function upload_image_test($post_id) {
+				// Need to require these files
+		if ( !function_exists('media_handle_upload') ) {
+			require_once(ABSPATH . "wp-admin" . '/includes/image.php');
+			require_once(ABSPATH . "wp-admin" . '/includes/file.php');
+			require_once(ABSPATH . "wp-admin" . '/includes/media.php');
+		}
+
+		$url = "https://scontent.fykz1-1.fna.fbcdn.net/v/t1.0-9/66376624_2584919758214575_66587373365886976_o.jpg?_nc_cat=111&_nc_oc=AQlZna8GBrNBXfGpFTPPOcXaOdp562K7hGOzV-RsQ4_O0ebbGYJsEQX1kYJKhpaeRzZrApFt-KyoLl0HHjl7laT_&_nc_ht=scontent.fykz1-1.fna&oh=fb783c4834439ff47ef75f10d5049a51&oe=5DBE2286";
+		$tmp = download_url( $url );
+		if( is_wp_error( $tmp ) ){
+			error_log('error downloading to temp file');
+			// download failed, handle error
+		}
+		$desc = "The WordPress Logo";
+		$file_array = array();
+
+		// Set variables for storage
+		// fix file filename for query strings
+		preg_match('/[^\?]+\.(jpg|jpe|jpeg|gif|png)/i', $url, $matches);
+		$file_array['name'] = basename($matches[0]);
+		$file_array['tmp_name'] = $tmp;
+
+		// If error storing temporarily, unlink
+		if ( is_wp_error( $tmp ) ) {
+			@unlink($file_array['tmp_name']);
+			$file_array['tmp_name'] = '';
+		}
+
+		// do the validation and storage stuff
+		$id = media_handle_sideload( $file_array, $post_id, $desc );
+
+		// If error storing permanently, unlink
+		if ( is_wp_error($id) ) {
+			@unlink($file_array['tmp_name']);
+			return $id;
+		}
+
+		$src = wp_get_attachment_url( $id );
+		return $src;
 	}
 
 	/**
