@@ -16,6 +16,8 @@
 class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 
 	const EVENT_HASHTAG_KEY = '#event';
+	const APP_SECRET = '50e7390422b754a7d327b445e3644605';
+	const VERIFY_FB_REQUEST_TOKEN = '648092485622867|4g4xouNOe8JY_50oblKRTEcXND0';
 
   /**
 	 * Constructor.
@@ -60,6 +62,7 @@ class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 	public function handle_fb_event( $request ) {
 
 		if ( ! empty( $request['post'] )) {
+			error_log('bad request');
 			return new WP_Error( 'rest_invalid_param', __( 'Invalid parent type.' ), array( 'status' => 400 ) );
 		}
 
@@ -81,7 +84,7 @@ class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 	public function validate_fb_request($request) {
 		// TODO validate this query params
 		// NOTE: "Verify Token" set in webhook subscription settings
-		$verify_token = '648092485622867|4g4xouNOe8JY_50oblKRTEcXND0';
+		$verify_token = self::VERIFY_FB_REQUEST_TOKEN;
 		$token = $request->get_param('hub_verify_token');
 		if ($request->get_param('hub_verify_token') == null || $token != $verify_token) {
 			error_log('There is an issue with verify token, handle this case correctly: ' . $request->get_param('hub_verify_token'));
@@ -123,11 +126,38 @@ class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 				 update_field('post_images', '66376624_2584919758214575_66587373365886976_o-3.jpg', $post_ID);
 
 				 error_log('src image: ' . $src);
+
+				 // TODO Get Album title using FB graph API
+				 // facebook graph api requests
+				 // $fb = $this->get_facebook_object();
+				 // try {
+				 //   // Returns a `FacebookFacebookResponse` object
+				 //   $response = $fb->get(
+				 //     '/1298712016973510/albums',
+				 //     '648092485622867|4g4xouNOe8JY_50oblKRTEcXND0'
+				 //   );
+				 // } catch(FacebookExceptionsFacebookResponseException $e) {
+				 //   error_log('Graph returned an error: ' . $e->getMessage());
+				 //   exit;
+				 // } catch(FacebookExceptionsFacebookSDKException $e) {
+				 //   error_log('Facebook SDK returned an error: ' . $e->getMessage());
+				 //   exit;
+				 // }
+				 // $graphNode = $response->getGraphNode();
+				 // error_log('graph node received....' . $graphNode);
 			}
 
 			error_log('event value: ' . json_encode($response_json));
 		}
 	}
+
+	// private function get_facebook_object() {
+	// 	return new Facebook\Facebook([
+  // 		'app_id' => '648092485622867',
+  // 		'app_secret' => '50e7390422b754a7d327b445e3644605',
+  // 		'default_graph_version' => 'v3.3',
+  // 	]);
+	// }
 
 	private function upload_image_test($post_id) {
 				// Need to require these files
@@ -185,7 +215,7 @@ class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 	private function validate_fb_signature($request) {
 		$header_signature = $request->get_header('X-Hub-Signature');
 		// TODO change this secret to a valid secret (or make this configurable)
-		$appsecret = '50e7390422b754a7d327b445e3644605';
+		$appsecret = self::APP_SECRET;
 		// $appsecret = 'c3a284c6eede693a7479e3482c7c1965';
 		$raw_post_data = file_get_contents('php://input');
 
