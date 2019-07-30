@@ -111,6 +111,11 @@ class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 			if (!$this->is_status_post_event($response_json)) {
 				 // TODO save event from the status post
 				 $post_title = 'Programmatically Created Post - Stub Title';
+				 $album_id = $response_json['album_id'] ?? '';
+				 if (strlen($album_id) > 0) {
+					 $post_title = $this->get_fb_album_name($album_id) ?? 'Programmatically Created Post - Stub Title';
+				 }
+
 				 $post_content = $response_json['message'];
 				 $post_data = compact('post_title', 'post_content');
 				 $post_data = wp_slash( $post_data );
@@ -129,40 +134,38 @@ class SRMD_REST_FB_Events_Controller extends WP_REST_Controller {
 
 				 update_field('post_title', $post_title, $post_ID);
 				 update_field('post_message', $post_content, $post_ID);
-
-
-
-				 // TODO Get Album title using FB graph API
-				 // facebook graph api requests
-				 // $fb = $this->get_facebook_object();
-				 // try {
-				 //   // Returns a `FacebookFacebookResponse` object
-				 //   $response = $fb->get(
-				 //     '/1298712016973510/albums',
-				 //     '648092485622867|4g4xouNOe8JY_50oblKRTEcXND0'
-				 //   );
-				 // } catch(FacebookExceptionsFacebookResponseException $e) {
-				 //   error_log('Graph returned an error: ' . $e->getMessage());
-				 //   exit;
-				 // } catch(FacebookExceptionsFacebookSDKException $e) {
-				 //   error_log('Facebook SDK returned an error: ' . $e->getMessage());
-				 //   exit;
-				 // }
-				 // $graphNode = $response->getGraphNode();
-				 // error_log('graph node received....' . $graphNode);
 			}
 
 			error_log('event value: ' . json_encode($response_json));
 		}
 	}
 
-	// private function get_facebook_object() {
-	// 	return new Facebook\Facebook([
-  // 		'app_id' => '648092485622867',
-  // 		'app_secret' => '50e7390422b754a7d327b445e3644605',
-  // 		'default_graph_version' => 'v3.3',
-  // 	]);
-	// }
+	private function get_fb_album_name($album_id) {
+		$fb = $this->get_facebook_object();
+		try {
+			// Returns a `FacebookFacebookResponse` object
+			$response = $fb->get(
+				'/' . $album_id,
+				'648092485622867|4g4xouNOe8JY_50oblKRTEcXND0'
+			);
+		} catch(FacebookExceptionsFacebookResponseException $e) {
+			error_log('Graph returned an error: ' . $e->getMessage());
+			exit;
+		} catch(FacebookExceptionsFacebookSDKException $e) {
+			error_log('Facebook SDK returned an error: ' . $e->getMessage());
+			exit;
+		}
+		$graphNode = $response->getGraphNode();
+		return $graphNode['name'] ?? '';
+	}
+
+	private function get_facebook_object() {
+		return new Facebook\Facebook([
+  		'app_id' => '648092485622867',
+  		'app_secret' => '50e7390422b754a7d327b445e3644605',
+  		'default_graph_version' => 'v3.3',
+  	]);
+	}
 
 	private function upload_image_test($post_id, $photo_link) {
 				// Need to require these files

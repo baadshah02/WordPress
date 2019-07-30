@@ -273,6 +273,7 @@ require( ABSPATH . WPINC . '/blocks/rss.php' );
 require( ABSPATH . WPINC . '/blocks/search.php' );
 require( ABSPATH . WPINC . '/blocks/shortcode.php' );
 require( ABSPATH . WPINC . '/blocks/tag-cloud.php' );
+require_once ABSPATH . WPINC . '/facebook/src/Facebook/autoload.php';
 
 $GLOBALS['wp_embed'] = new WP_Embed();
 
